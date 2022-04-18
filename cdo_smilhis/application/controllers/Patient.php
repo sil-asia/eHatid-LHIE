@@ -1,19 +1,27 @@
 <?php
+defined('BASEPATH') OR exit('No direct script access allowed');
 
-require APPPATH . 'libraries/REST_Controller.php'; 
-   
-     
+require APPPATH . 'libraries/Format.php';
+require APPPATH . 'libraries/REST_Controller.php';
+
+
 class Patient extends REST_Controller {
+
     
-	  /**
+	  /*
      * Get All Data from this method.
      *
      * @return Response
     */
-    public function __construct() {
-       parent::__construct();
-       $this->load->database();
+        public function __construct() {
+        parent::__construct();
+          $username = $this->session->userdata('name');  
+    
+        $this->load->database();
     }
+
+  
+
        
     /**
      * Get All Data from this method.
@@ -22,13 +30,24 @@ class Patient extends REST_Controller {
     */
 	public function index_get($id = 0)
 	{
-        if(!empty($id)){
+         $username = $this->session->userdata('name');  
+
+         if($username != null)
+         {
+            var_dump('No username');
+         }
+         else
+         {
+             if(!empty($id)){
             $data = $this->db->get_where("Patient", ['id' => $id])->row_array();
         }else{
             $data = $this->db->get("Patient")->result();
         }
      
         $this->response($data, REST_Controller::HTTP_OK);
+         }
+        
+              
 	}
       
     /**
