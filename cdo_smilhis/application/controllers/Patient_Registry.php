@@ -16,9 +16,6 @@ class Patient_Registry extends MY_Controller {
         }
         
 
-
-
-
     }
 
     public function index()
@@ -29,9 +26,11 @@ class Patient_Registry extends MY_Controller {
     }
     public function list_all($msg = "")
     {
+        ini_set('memory_limit', '-1');
         $data = $this->user_header_data();
-        $data["module"] = "Patient Registry Module";
+        $data["module"] = "Patient Regsistry Module";
          $data["msg"] = "";
+        
         if ($msg == 3)
         {
             $data["msg"] =  $data["msg"] = "<div class='alert alert-danger'>
