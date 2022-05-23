@@ -5,7 +5,7 @@ require APPPATH . 'libraries/Format.php';
 require APPPATH . 'libraries/REST_Controller.php';
 
 
-class Patient extends REST_Controller {
+class Facility extends REST_Controller {
 
     
 	  /*
@@ -15,8 +15,8 @@ class Patient extends REST_Controller {
     */
         public function __construct() {
         parent::__construct();
-          $username = $this->session->userdata('name');  
-    
+          $username = $this->session->userdata('name');
+
         $this->load->database();
     }
 
@@ -39,9 +39,9 @@ class Patient extends REST_Controller {
          else
          {
              if(!empty($id)){
-            $data = $this->db->get_where("Patient", ['id' => $id])->row_array();
+            $data = $this->db->get_where("health_facility", ['id' => $id])->row_array();
         }else{
-            $data = $this->db->get("Patient")->result();
+            $data = $this->db->get("health_facility")->result();
         }
      
         $this->response($data, REST_Controller::HTTP_OK);
