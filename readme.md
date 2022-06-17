@@ -1,5 +1,3 @@
 Follow the instructions here: 
-
-https://tecadmin.net/install-codeigniter-on-ubuntu-18-04-bionic/
-
+(https://pczuniga.notion.site/Technologies-Used-d2e90d5d6217499c81254cb3d177d931)
 Database: smilhisdb.sql
