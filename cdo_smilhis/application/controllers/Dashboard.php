@@ -1,10 +1,11 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
+require FCPATH . 'google/vendor/autoload.php';
 
 class Dashboard extends MY_Controller {
 
-	public function __construct(){
-		parent::__construct();
+    public function __construct(){
+        parent::__construct();
         $this->load->database();
         $this->load->library('table');
         $this->load->model('dashboard_model');
@@ -14,6 +15,109 @@ class Dashboard extends MY_Controller {
 
            
         }
+
+        $client = new \Google_Client();
+        $client->setApplicationName('Google Sheets and PHP');
+        $client->setScopes([\Google_Service_Sheets::SPREADSHEETS]);
+        $client->setAccessType('offline');
+        $client->setAuthConfig(FCPATH. 'google/credentials.json');
+        $service = new Google_Service_Sheets($client);
+        $spreadsheetId = "1fTO9IqtwLRrB85Za7eFtb9DsFuQ3gfwxfe54VZBKD_Q"; //It is present in your URL
+        $update_range = "patient!A2:G";
+        $column = array();
+        $patients = $this->dashboard_model->get_all("patient_registry");
+        foreach($patients as $patient)
+        {
+            $pat = $this->dashboard_model->get_row_by_1_value('Patient', 'id', $patient->patient_ID);
+            $row = array();
+            array_push($row, $patient->patient_ID);
+            array_push($row, $patient->gender);
+            array_push($row, $patient->barangay);
+            array_push($row, $pat->profiled);
+            if ($pat->profiled == 1)
+            {
+                 array_push($row, $pat->date_profiled);
+            }
+            else
+            {
+                 array_push($row, "");
+            }
+           
+            array_push($row, $patient->facility);
+            array_push($row, $patient->age);
+            array_push($column, $row);
+        }
+        
+        $body = new Google_Service_Sheets_ValueRange([
+            'values' =>$column
+        ]);
+      
+         $params = [
+
+          'valueInputOption' => 'RAW'
+
+        ];
+
+        
+        $update_sheet = $service->spreadsheets_values->update($spreadsheetId, $update_range, $body, $params);
+        $update_range2 = "facility!A2:G";
+        $column = array();
+        $facilities = $this->dashboard_model->get_all("health_facility");
+        foreach($facilities as $facility)
+        {
+           
+            $row = array();
+            array_push($row, $facility->id);
+            array_push($row, $facility->name);
+            
+            array_push($row, $facility->level);
+            array_push($row, $facility->ownership);
+            array_push($row, $facility->capacity);
+            array_push($row, $facility->current_load);
+            array_push($row, $facility->latitude.",".$facility->longtitude);
+            array_push($column, $row);
+        }
+        
+        $body2 = new Google_Service_Sheets_ValueRange([
+            'values' =>$column
+        ]);
+      
+         $params = [
+
+          'valueInputOption' => 'RAW'
+
+        ];
+        $update_sheet = $service->spreadsheets_values->update($spreadsheetId, $update_range2, $body2, $params);
+
+         $update_range3 = "worker!A2:G";
+        $column = array();
+        $hwrs = $this->dashboard_model->get_all("health_worker_registry");
+        foreach($hwrs as $hwr)
+        {
+           
+            $row = array();
+            array_push($row, $hwr->hwr_id);
+            array_push($row, $hwr->type);
+            
+            array_push($row, $hwr->facility);
+            array_push($row, $hwr->gender);
+            array_push($column, $row);
+        }
+        
+        $body3 = new Google_Service_Sheets_ValueRange([
+            'values' =>$column
+        ]);
+      
+         $params = [
+
+          'valueInputOption' => 'RAW'
+
+        ];
+
+        
+        $update_sheet = $service->spreadsheets_values->update($spreadsheetId, $update_range3, $body3, $params);
+        
+      
         
       
 
@@ -25,7 +129,7 @@ class Dashboard extends MY_Controller {
     public function index()
     {
         $this->view(date('y-m-d'),date('Y-m-d', strtotime('+1 day', strtotime(date('y-m-d')))));
-    	
+        
     }
 
     public function view($start, $end)
@@ -33,23 +137,7 @@ class Dashboard extends MY_Controller {
        
         $data = $this->user_header_data();
         $data['module'] = "General Dashboard";
-        $data['buyers'] = 10;
-        $data['buyers_week'] = 20;
-        $data['org_week'] = 30;
-        $data['organizations'] = 10;
-        $data['item_counts'] = $this->get_product_count_per_item();
-        $data['view_array'] = $this->generate_view_array($start, $end);
-        $data['views'] = 10;
-        $data['views_week'] = 20;
-        $data['all_products_submitted'] = 30;
-        $data['all_products_submitted_week'] = 40;
-         $data['all_products_vetted'] =30;
-        $data['all_products_vetted_week'] = 20;
-         $data['all_products_posted'] = 15;
-        $data['all_products_posted_week'] = 30;
-        $data['product_views'] = $this->get_product_views(5);
-        $data['buyer_views'] = $this->get_buyer_views(5);
-        $data['product_count'] = $this->get_product_count_per_item();
+        
 
 
 
@@ -58,195 +146,7 @@ class Dashboard extends MY_Controller {
 
     }
 
-    public function generate_view_array($start, $end)
-    {
-  
-
-        $curr_date =  date('Y-m-d', strtotime('0 day', strtotime($start)));
-        $data = array();
-        while($curr_date < $end)
-        {
-            $element = new StdClass();
-            $element->date = $curr_date;
-            $element->count = 5;
-            $curr_date = date('Y-m-d', strtotime('+1 day', strtotime($curr_date)));
-            array_push($data, $element);
-
-        }
-
-        return $data;
-    }
-
-
-    public function get_product_count_per_item()
-    {
-        $items = $this->dashboard_model->get_all('dd_hwr_type');
-        $item_count = array();
-        $item_color = array('blue','blue','blue', 'blue', 'blue', 'blue', 'blue','teal', 'pink');
-        $j = 0;
-        $product_count = 100;
-        foreach($items as $item)
-        {
-            $item_ = new StdClass();
-            $item_->name = $item->name;
-            $count = 10;
-            $item_->count = $count;
-            $item_->rate =  round($count*100/$product_count);
-            $item_->color = 'blue';
-            $j++;
-            array_push($item_count, $item_);
-        }
-      
-
-        return $item_count;
-
-    }
-
-    public function get_product_views($c)
-    {
-        $items = $this->dashboard_model->get_all('dd_hwr_type');
-        $item_count = array();
-        $item_color = array('blue','blue','blue', 'blue', 'blue', 'blue', 'blue','teal', 'pink');
-        $j = 0;
-                $product_count = 100;
-
-        foreach($items as $item)
-        {
-            $item_ = new StdClass();
-            $item_->name = $item->name;
-            $count = 10;
-            $item_->count = $count;
-            $item_->rate =  round($count*100/$product_count);
-            $item_->color = 'blue';
-            $j++;
-            array_push($item_count, $item_);
-        }
-      
-
-        return $item_count;
-        function my_sort_function2($a, $b)
-        {
-            return $a->count < $b->count;
-        }
-        usort($product_count, 'my_sort_function2');
-        $i = 0;
-        $result = array();
-        while($i < $c)
-        {
-            array_push($result,$product_count[$i]);
-            $i++;
-        }
-
-        return $result;
-    }
-    public function get_buyer_views($c)
-    {
-       $items = $this->dashboard_model->get_all('dd_hwr_type');
-        $item_count = array();
-        $item_color = array('blue','blue','blue', 'blue', 'blue', 'blue', 'blue','teal', 'pink');
-        $j = 0;
-         $product_count = 100;
-
-        foreach($items as $item)
-        {
-            $item_ = new StdClass();
-            $item_->name = $item->name;
-            $count = 10;
-            $item_->count = $count;
-            $item_->rate =  round($count*100/$product_count);
-            $item_->color = 'blue';
-            $j++;
-            array_push($item_count, $item_);
-        }
-      
-
-        return $item_count;
-        function my_sort_function3($a, $b)
-        {
-            return $a->count < $b->count;
-        }
-        usort($buyer_count, 'my_sort_function3');
-        $i = 0;
-        $result = array();
-        while($i < $c)
-        {
-            array_push($result,$buyer_count[$i]);
-            $i++;
-        }
-
-        return $result;
-    }
-
-    public function view_all_product_counts()
-    {
-         $items = $this->dashboard_model->get_all('dd_hwr_type');
-        $item_count = array();
-        $item_color = array('blue','blue','blue', 'blue', 'blue', 'blue', 'blue','teal', 'pink');
-        $j = 0;
-        $product_count = 100;
-
-        foreach($items as $item)
-        {
-            $item_ = new StdClass();
-            $item_->name = $item->name;
-            $count = 10;
-            $item_->count = $count;
-            $item_->rate =  round($count*100/$product_count);
-            $item_->color = 'blue';
-            $j++;
-            array_push($item_count, $item_);
-        }
-      
-
-        return $item_count;
-        function my_sort_function2($a, $b)
-        {
-            return $a->count < $b->count;
-        }
-        usort($product_count, 'my_sort_function2');
-        $i = 0;
-        
-        $data = $this->user_header_data();
-        $data['product_views'] = $product_count;
-        $this->load->view('internal/Dashboard/product_count_view',$data);
-
-
-    }
-    public function view_all_buyer_counts()
-    { $items = $this->dashboard_model->get_all('dd_hwr_type');
-        $item_count = array();
-        $item_color = array('blue','blue','blue', 'blue', 'blue', 'blue', 'blue','teal', 'pink');
-        $j = 0;
-        $product_count = 100;
-
-        foreach($items as $item)
-        {
-            $item_ = new StdClass();
-            $item_->name = $item->name;
-            $count = 10;
-            $item_->count = $count;
-            $item_->rate =  round($count*100/$product_count);
-            $item_->color = 'blue';
-            $j++;
-            array_push($item_count, $item_);
-        }
-      
-
-        return $item_count;
-        function my_sort_function3($a, $b)
-        {
-            return $a->count < $b->count;
-        }
-        usort($buyer_count, 'my_sort_function3');
-        $i = 0;
-        
-        $data = $this->user_header_data();
-        $data['buyer_views'] = $buyer_count;
-        $this->load->view('internal/Dashboard/buyer_count_view',$data);
-
-
-    }
-
+   
 
    
 
