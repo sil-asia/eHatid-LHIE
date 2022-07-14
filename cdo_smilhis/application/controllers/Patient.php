@@ -41,7 +41,7 @@ class Patient extends REST_Controller {
              if(!empty($id)){
             $data = $this->db->get_where("Patient", ['id' => $id])->row_array();
         }else{
-            $data = $this->db->get("Patient")->result();
+            $data = $this->db->get("patient")->result();
         }
      
         $this->response($data, REST_Controller::HTTP_OK);
