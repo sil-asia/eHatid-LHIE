@@ -36,7 +36,7 @@
     </div>
     <div class="large-12 columns">
        <label >Philhealth Number</label>
-       <input required type="text" class="form-control" id="philhealth" name="philhealth" placeholder="Philhealth Number ">
+       <input type="text" class="form-control" id="philhealth" name="philhealth" placeholder="Philhealth Number ">
     </div>
     <div class="large-12 columns">
         <label >Birth Date</label>
